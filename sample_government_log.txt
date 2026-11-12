@@ -1,0 +1,4 @@
+2026-11-01 09:10:02 LOGIN SUCCESS user=student
+2026-11-01 09:11:45 FILE ACCESS user=student file=marks.csv
+2026-11-01 09:12:03 LOGIN FAILED user=unknown
+2026-11-01 09:13:20 LOGOUT user=student
