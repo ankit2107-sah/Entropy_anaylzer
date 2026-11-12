@@ -1,53 +1,123 @@
-# Project 4.2 – Text/Code Complexity & Security Vulnerability Analyzer Using Shannon Entropy
+# Text/Code Complexity & Security Analyzer (Shannon Entropy)
 
-A Streamlit educational prototype for analysing e-governance logs, plain text and source-code files.
+A Streamlit-based application to analyze character-level Shannon entropy, calculate probability gradients, ynthetic_egov_large.csv   # created by the generator; not committed , and inspect code complexity metrics.
+
+---
+
+## Folder Structure
+
+```
+entropy_analyzer/
+├── app.py              # Main Streamlit application
+├── requirements.txt    # Python dependencies
+├── README.md           # Setup and usage guide
+└── samples/            # Test and sample files
+    └── fake_log.txt    # Sample log with dummy PII & secrets
+```
+
+---
+
+## Setup & Running the Application
+
+### 1. Open a Terminal / PowerShell
+Navigate to the `entropy_analyzer` folder:
+
+```bash
+cd "C:\Users\Dell\.gemini\antigravity\scratch\entropy_analyzer"
+```
+
+### 2. Create and Activate a Virtual Environment
+- **Windows (Command Prompt / PowerShell):**
+  ```powershell
+  python -m venv .venv
+  .venv\Scripts\activate
+  ```
+  *(If on PowerShell you encounter an execution policy error, run `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` first).*
+
+- **macOS / Linux:**
+  ```bash
+  python3 -m venv .venv
+  source .venv/bin/activate
+  ```
+
+### 3. Install Dependencies
+```bash
+pip install -r requirements.txt
+```
+
+### 4. Run the Streamlit Application
+```bash
+streamlit run app.py
+```
+
+### 5. Access the Web UI
+Open your browser and navigate to:
+**http://localhost:8501**
+
+# How to Use
+1. **Provide input** using one of three options:
+   - Paste text into the text box.
+   - Upload a TXT, LOG, PY, C, H, CPP, JAVA, JS, TS, CSV, HTML, or JSON file. Files are read as UTF-8 text and are never executed.
+   - Choose a built-in sample from the dropdown and click **Use sample**.
+2. Click **Analyse input**.
+3. Review the result tabs:
+   - **Frequency:** most common characters and the probability table.
+   - **Contribution curve:** the plot of p against h(p).
+   - **Calculus:** gradient statistics and trapezoidal area.
+   - **Security scan:** risk score, label, and masked findings.
+   - **Code metrics:** line, function, and complexity figures.
+4. Download the **TXT report** and **character CSV** if you need them.
+---
+
+## Generating Large Synthetic Test Data
+
+To test with a large file, run:
+
+```bash
+python make_synthetic_data.py 500000
+```
+
+This writes about 500,000 fake e-governance records to `samples/synthetic_egov_large.csv` (roughly 50–60 MB). The script uses a fixed random seed (42), so the output is the same on every run. All names, emails (`example.com`), and IDs are invented.
+
+Large files can slow the browser because the whole file is loaded into the text box. If the page becomes slow, generate a smaller file, for example `python make_synthetic_data.py 100000`.
+
+---
 
 ## Features
-- Paste text or upload TXT, LOG, PY, C, H, CPP, JAVA, JS, TS, CSV, HTML and JSON files.
-- Character frequency, probability distribution and Shannon entropy (bits per character).
-- Numerical central-difference estimate for the contribution function `h(p) = -p log2(p)`.
-- Trapezoidal area under the sorted probability-contribution curve.
-- Character-frequency and entropy-contribution graphs.
-- Rule-based indicators for email addresses, phone-like numbers, Aadhaar-like number patterns, password/secret assignments, API/access tokens, private-key headers and long encoded-looking strings.
-- A transparent heuristic triage score (not a certified security score).
-- Basic source-code metrics: lines, comments, functions, decision points and cyclomatic-complexity estimate. Python uses AST; other languages use approximate pattern matching.
-- Downloadable TXT audit report and CSV data.
+- **Entropy Analysis:** Computes per-character frequency, probability $p$, Shannon entropy $H$, and qualitative band (Low / Moderate / High).
+- **Calculus & Curves:** Plots contribution curve $h(p) = -p \log_2 p$, estimates central-difference gradient $\frac{dh}{dp}$, and calculates trapezoidal area.
+- **Pattern & Security Scan:** Heuristically flags possible emails, phone numbers, Aadhaar numbers, passwords, API tokens, and private keys with automated masking.
+- **Code Metrics:** Cyclomatic complexity (AST-based for Python, regex-based for others), line counts, and comment estimation.
+- **Exporting:** Download text audit reports and character frequency CSVs.
 
-## Run on Windows
-1. Extract the ZIP file.
-2. Open the extracted `Project_4_2` folder in VS Code.
-3. Open Terminal and optionally create a virtual environment:
-   ```powershell
-   python -m venv .venv
-   .venv\Scripts\activate
-   ```
-4. Install packages:
-   ```powershell
-   pip install -r requirements.txt
-   ```
-5. Start the app:
-   ```powershell
-   streamlit run app.py
-   ```
-6. Open the local URL printed in the terminal (usually `http://localhost:8501`).
+## Limitations
+- Entropy measures character distribution only. It does not prove a file is encrypted, compressed, or malicious.
+- Pattern matches can be false positives (for example, a 12-digit number) or miss real secrets.
+- The risk score is a heuristic for triage, not a certified security rating.
+- Use synthetic or public data only. Never upload real credentials or personal identifiers.
+- 
+## Safe Data Use
 
-## Suggested demonstration
-1. Load **E-governance log with review items** to show password/email pattern detection.
-2. Load **Repeated characters** and note its low entropy.
-3. Load **Random-looking string** and compare its entropy. Explain that high entropy is not proof of encryption or malware.
-4. Upload a Python source file to demonstrate the code metrics.
-5. Download the audit report and CSV outputs.
+- Use only synthetic data, sample files, or public datasets.
+- Never upload real passwords, API keys, private keys, Aadhaar numbers, or other personal identifiers.
+- Review any output before sharing it.
 
-## Method and limitations
-Shannon entropy is `H = -sum(p_i * log2(p_i))`. It describes character distribution, not whether data is safe or malicious. Pattern matching can produce false positives and cannot guarantee that no secret is present. Aadhaar-like matches are only number-pattern indicators and are not verified Aadhaar numbers. The risk score is a simple, documented educational triage heuristic, not a formal security rating. Python complexity uses AST; complexity for other languages is approximate. Files are read as text and never executed. Do not upload real credentials, personal data or confidential production logs for demonstrations.
+---
 
-## College specification mapping
-- Ingest raw e-governance text/source code: paste box and file uploader.
-- Extract character probability distribution: frequency/probability table.
-- Compute entropy, numerical gradient and area: entropy analysis tab.
-- Identify possible plain-text leaks and obfuscation indicators: security analysis tab.
-- Generate audit report: downloadable TXT and CSV reports.
-- Complexity analysis: source-code metrics tab.
+## Troubleshooting
 
-## Dependencies
-Python 3.10+ recommended. Streamlit, NumPy, Pandas and Matplotlib.
+- **`python` not found:** Install Python from python.org and tick "Add python.exe to PATH".
+- **`No module named streamlit`:** Activate `.venv` and run `python -m pip install -r requirements.txt` from the project folder.
+- **Page does not open:** Keep the terminal running, use `http://localhost:8501`, or try `python -m streamlit run app.py --server.port 8502`.
+
+---
+
+## Acknowledgements
+
+Developed as part of Project 4.2 (Text/Code Complexity & Security Vulnerability Analyzer Using Shannon Entropy), SRM Institute of Science and Technology, Ramapuram. Supervised by Mr. Johnty Rodes L.
+
+---
+
+## License
+
+For academic use. Add a license file if you plan to reuse or distribute the code.
