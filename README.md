@@ -1,123 +1,47 @@
-# Text/Code Complexity & Security Analyzer (Shannon Entropy)
+# Entropy Analyzer
 
-A Streamlit-based application to analyze character-level Shannon entropy, calculate probability gradients, ynthetic_egov_large.csv   # created by the generator; not committed , and inspect code complexity metrics.
+A browser-based dashboard for character-level Shannon entropy, heuristic sensitive-pattern scanning, and approximate source-code metrics. The web version runs entirely on the user's device: pasted text and uploaded files are not sent to an analysis server, and files are never executed.
 
----
+## Run locally
 
-## Folder Structure
+### Browser dashboard
 
-```
-entropy_analyzer/
-├── app.py              # Main Streamlit application
-├── requirements.txt    # Python dependencies
-├── README.md           # Setup and usage guide
-└── samples/            # Test and sample files
-    └── fake_log.txt    # Sample log with dummy PII & secrets
-```
+Open `public/index.html` in a browser, or serve the project folder with any static file server. No build step or JavaScript packages are required.
 
----
+### Streamlit app
 
-## Setup & Running the Application
+The original Python app is also available:
 
-### 1. Open a Terminal / PowerShell
-Navigate to the `entropy_analyzer` folder:
-
-```bash
-cd "C:\Users\Dell\.gemini\antigravity\scratch\entropy_analyzer"
+```powershell
+py -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m streamlit run app.py
 ```
 
-### 2. Create and Activate a Virtual Environment
-- **Windows (Command Prompt / PowerShell):**
-  ```powershell
-  python -m venv .venv
-  .venv\Scripts\activate
-  ```
-  *(If on PowerShell you encounter an execution policy error, run `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` first).*
+Open <http://localhost:8501>. On macOS or Linux, replace `py` with `python3` and use `.venv/bin/python`.
 
-- **macOS / Linux:**
-  ```bash
-  python3 -m venv .venv
-  source .venv/bin/activate
-  ```
+## Deploy to Vercel
 
-### 3. Install Dependencies
-```bash
-pip install -r requirements.txt
-```
+The browser dashboard is a static site, which Vercel can host directly. The included `vercel.json` sets `public` as the output directory.
 
-### 4. Run the Streamlit Application
-```bash
-streamlit run app.py
-```
+1. Import this GitHub repository in the Vercel dashboard.
+2. Select **Other** as the framework preset if Vercel asks.
+3. Keep the build command empty; no build step or environment variables are needed.
+4. Deploy. Vercel will publish the contents of `public/` and redeploy on pushes to the connected branch.
 
-### 5. Access the Web UI
-Open your browser and navigate to:
-**http://localhost:8501**
+The Streamlit `app.py` remains for local use; Vercel serves the static browser dashboard instead.
 
-# How to Use
-1. **Provide input** using one of three options:
-   - Paste text into the text box.
-   - Upload a TXT, LOG, PY, C, H, CPP, JAVA, JS, TS, CSV, HTML, or JSON file. Files are read as UTF-8 text and are never executed.
-   - Choose a built-in sample from the dropdown and click **Use sample**.
-2. Click **Analyse input**.
-3. Review the result tabs:
-   - **Frequency:** most common characters and the probability table.
-   - **Contribution curve:** the plot of p against h(p).
-   - **Calculus:** gradient statistics and trapezoidal area.
-   - **Security scan:** risk score, label, and masked findings.
-   - **Code metrics:** line, function, and complexity figures.
-4. Download the **TXT report** and **character CSV** if you need them.
----
+## Dashboard features
 
-## Generating Large Synthetic Test Data
+- Character counts, Shannon entropy, unique-character count, and entropy interpretation.
+- Character-frequency and probability/contribution charts with a detailed character table.
+- Rule-based indicators for email addresses, phone-like and Aadhaar-like numbers, password/token assignments, private-key headers, and long encoded-looking strings. Examples are masked.
+- Approximate line, comment, function, decision-point, and cyclomatic-complexity metrics.
+- Downloadable text report and CSV exports.
 
-To test with a large file, run:
+## Limitations and safe use
 
-```bash
-python make_synthetic_data.py 500000
-```
-
-This writes about 500,000 fake e-governance records to `samples/synthetic_egov_large.csv` (roughly 50–60 MB). The script uses a fixed random seed (42), so the output is the same on every run. All names, emails (`example.com`), and IDs are invented.
-
-Large files can slow the browser because the whole file is loaded into the text box. If the page becomes slow, generate a smaller file, for example `python make_synthetic_data.py 100000`.
-
----
-
-## Features
-- **Entropy Analysis:** Computes per-character frequency, probability $p$, Shannon entropy $H$, and qualitative band (Low / Moderate / High).
-- **Calculus & Curves:** Plots contribution curve $h(p) = -p \log_2 p$, estimates central-difference gradient $\frac{dh}{dp}$, and calculates trapezoidal area.
-- **Pattern & Security Scan:** Heuristically flags possible emails, phone numbers, Aadhaar numbers, passwords, API tokens, and private keys with automated masking.
-- **Code Metrics:** Cyclomatic complexity (AST-based for Python, regex-based for others), line counts, and comment estimation.
-- **Exporting:** Download text audit reports and character frequency CSVs.
-
-## Limitations
-- Entropy measures character distribution only. It does not prove a file is encrypted, compressed, or malicious.
-- Pattern matches can be false positives (for example, a 12-digit number) or miss real secrets.
-- The risk score is a heuristic for triage, not a certified security rating.
-- Use synthetic or public data only. Never upload real credentials or personal identifiers.
-- 
-## Safe Data Use
-
-- Use only synthetic data, sample files, or public datasets.
-- Never upload real passwords, API keys, private keys, Aadhaar numbers, or other personal identifiers.
-- Review any output before sharing it.
-
----
-
-## Troubleshooting
-
-- **`python` not found:** Install Python from python.org and tick "Add python.exe to PATH".
-- **`No module named streamlit`:** Activate `.venv` and run `python -m pip install -r requirements.txt` from the project folder.
-- **Page does not open:** Keep the terminal running, use `http://localhost:8501`, or try `python -m streamlit run app.py --server.port 8502`.
-
----
-
-## Acknowledgements
-
-Developed as part of Project 4.2 (Text/Code Complexity & Security Vulnerability Analyzer Using Shannon Entropy), SRM Institute of Science and Technology, Ramapuram. Supervised by Mr. Johnty Rodes L.
-
----
-
-## License
-
-For academic use. Add a license file if you plan to reuse or distribute the code.
+- Entropy is not proof of encryption, compression, or malicious content.
+- Pattern matching can produce false positives and cannot guarantee that secrets are absent.
+- Security scores and complexity metrics are educational estimates, not certified ratings. The browser version uses heuristic source scanning; Python does not receive a full AST parse in the browser.
+- Use synthetic or public data. Do not upload real credentials, private keys, or personal identifiers to any public service.

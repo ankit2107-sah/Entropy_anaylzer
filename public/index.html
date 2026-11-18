@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#080d1a">
+    <meta name="description" content="Analyze character entropy, source-code complexity estimates, and common sensitive-data patterns in text files.">
+    <title>Entropy Analyzer | Project 4.2</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar">
+        <a class="brand" href="/" aria-label="Entropy Analyzer home">
+          <span class="brand-icon" aria-hidden="true">E</span>
+          <span>Entropy<span class="brand-light">Analyzer</span></span>
+        </a>
+        <div class="sidebar-section">
+          <p class="eyebrow">PROJECT 4.2</p>
+          <h2>Text &amp; code insights</h2>
+          <p class="muted">Explore character entropy, estimate source complexity, and review possible sensitive-data patterns.</p>
+        </div>
+        <div class="privacy-note">
+          <span class="privacy-icon" aria-hidden="true">✓</span>
+          <div>
+            <strong>Private by design</strong>
+            <p>Your analysis runs in this browser. Text is not uploaded to a server.</p>
+          </div>
+        </div>
+        <div class="sidebar-footer">
+          <p class="eyebrow">SUPPORTED FILES</p>
+          <p class="muted">TXT · LOG · PY · C · H · CPP · JAVA · JS · TS · CSV · HTML · JSON</p>
+          <p class="tiny muted">Educational estimates only. Always verify findings yourself.</p>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">LOCAL ANALYSIS WORKSPACE</p>
+            <h1>Text &amp; Code Analyzer</h1>
+          </div>
+          <span class="status-pill"><span class="status-dot"></span> Browser-based</span>
+        </header>
+
+        <section class="input-panel panel" aria-labelledby="input-title">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">GET STARTED</p>
+              <h2 id="input-title">Choose what to analyze</h2>
+            </div>
+            <label class="file-button" for="file-input">↑ <span>Upload file</span></label>
+            <input id="file-input" type="file" accept=".txt,.log,.py,.c,.h,.cpp,.java,.js,.ts,.csv,.html,.json,text/plain">
+          </div>
+          <textarea id="text-input" spellcheck="false" aria-label="Text or source code to analyze" placeholder="Paste text, a log, or source code here…"></textarea>
+          <div class="input-footer">
+            <div class="input-tools">
+              <label class="select-wrap" for="sample-select">
+                <span class="sr-only">Choose a sample</span>
+                <select id="sample-select">
+                  <option value="">Try a sample…</option>
+                  <option value="log">E-governance log</option>
+                  <option value="code">Python code</option>
+                  <option value="random">Random-looking text</option>
+                </select>
+              </label>
+              <button id="load-sample" class="button button-secondary" type="button">Load sample</button>
+              <span id="input-meta" class="tiny muted">No input loaded</span>
+            </div>
+            <button id="analyze-button" class="button button-primary" type="button">Analyze input <span aria-hidden="true">→</span></button>
+          </div>
+          <p id="input-error" class="error-message" role="alert" hidden></p>
+        </section>
+
+        <section id="empty-state" class="empty-state panel">
+          <div class="empty-icon" aria-hidden="true">⌁</div>
+          <h2>Your analysis will appear here</h2>
+          <p class="muted">Paste text or upload a file, then choose <strong>Analyze input</strong> to explore the results.</p>
+        </section>
+
+        <section id="dashboard" hidden>
+          <div class="dashboard-title">
+            <div>
+              <p class="eyebrow">YOUR RESULTS</p>
+              <h2>Analysis dashboard</h2>
+            </div>
+            <span id="analyzed-file" class="file-badge"></span>
+          </div>
+          <div id="summary-cards" class="card-grid summary-grid"></div>
+          <div class="summary-note entropy-note"><strong id="entropy-label"></strong><span id="entropy-meaning"></span></div>
+          <div class="summary-note security-note"><strong>Security triage</strong><span id="risk-label"></span></div>
+
+          <nav class="tabs" aria-label="Analysis result sections">
+            <button class="tab active" type="button" data-tab="entropy">◫ <span>Entropy analysis</span></button>
+            <button class="tab" type="button" data-tab="security">⬡ <span>Security analysis</span></button>
+            <button class="tab" type="button" data-tab="complexity">⌘ <span>Code complexity</span></button>
+            <button class="tab" type="button" data-tab="report">▤ <span>Audit report</span></button>
+          </nav>
+
+          <section id="tab-entropy" class="tab-content">
+            <div class="chart-grid">
+              <article class="panel chart-panel">
+                <div class="panel-heading"><div><p class="eyebrow">CHARACTER FREQUENCY</p><h3>Most frequent characters</h3></div><span class="chart-tag">TOP 20</span></div>
+                <canvas id="frequency-chart" aria-label="Bar chart of the 20 most frequent characters"></canvas>
+              </article>
+              <article class="panel chart-panel">
+                <div class="panel-heading"><div><p class="eyebrow">PROBABILITY CURVE</p><h3>Entropy contribution</h3></div><span class="chart-tag">h(p)</span></div>
+                <canvas id="contribution-chart" aria-label="Line chart of probability and entropy contribution"></canvas>
+              </article>
+            </div>
+            <article class="panel table-panel">
+              <div class="panel-heading"><div><p class="eyebrow">CHARACTER BREAKDOWN</p><h3>Probability distribution</h3></div></div>
+              <div class="table-wrap">
+                <table><thead><tr><th>Character</th><th>Frequency</th><th>Probability</th><th>Entropy contribution</th><th>Numerical gradient</th></tr></thead><tbody id="frequency-rows"></tbody></table>
+              </div>
+            </article>
+            <div id="calculus-cards" class="card-grid calculus-grid"></div>
+            <p class="footnote">The gradient is estimated numerically for h(p) = −p log₂(p). The area is the trapezoidal area under the sorted probability-contribution curve; neither is a security score.</p>
+          </section>
+
+          <section id="tab-security" class="tab-content" hidden>
+            <article class="panel table-panel">
+              <div class="panel-heading"><div><p class="eyebrow">RULE-BASED INDICATORS</p><h3>Potentially sensitive patterns</h3></div><span id="finding-count" class="chart-tag"></span></div>
+              <div id="security-results"></div>
+            </article>
+            <p class="footnote">Matches may be false positives, and no matches do not guarantee that sensitive information is absent. Secret-like examples are masked.</p>
+          </section>
+
+          <section id="tab-complexity" class="tab-content" hidden>
+            <div class="panel-heading standalone-heading"><div><p class="eyebrow">SOURCE SCAN</p><h3>Complexity estimates</h3></div></div>
+            <div id="complexity-cards" class="card-grid complexity-grid"></div>
+            <div class="notice"><strong>About these estimates</strong><p>Complexity is approximated with browser-side pattern matching, including for Python. It is not a full language parser; results for ordinary text are not meaningful.</p></div>
+          </section>
+
+          <section id="tab-report" class="tab-content" hidden>
+            <article class="panel report-panel">
+              <div class="panel-heading"><div><p class="eyebrow">EXPORT</p><h3>Audit report</h3></div></div>
+              <textarea id="report-preview" readonly aria-label="Audit report preview"></textarea>
+              <div class="download-row">
+                <button id="download-report" class="button button-secondary" type="button">↓ Download report (.txt)</button>
+                <button id="download-frequency" class="button button-secondary" type="button">↓ Download frequency (.csv)</button>
+                <button id="download-findings" class="button button-secondary" type="button">↓ Download findings (.csv)</button>
+              </div>
+            </article>
+          </section>
+
+          <footer class="page-footer">Project 4.2 <span>·</span> Entropy analysis <span>·</span> Educational use</footer>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>
