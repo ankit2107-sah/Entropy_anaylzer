@@ -45,7 +45,7 @@ def analyze_text(text):
     gradient = (-(hi * np.log2(hi)) - (-(lo * np.log2(lo)))) / (hi - lo)
     order = np.argsort(probs)
     sorted_p, sorted_c = probs[order], contributions[order]
-    area = float(np.trapz(sorted_c, sorted_p)) if len(sorted_p) > 1 else 0.0
+    area = float(np.sum((sorted_c[:-1] + sorted_c[1:]) * 0.5 * np.diff(sorted_p))) if len(sorted_p) > 1 else 0.0
     rows = []
     for ch, count, p, contribution, grad in zip(chars, [counts[c] for c in chars], probs, contributions, gradient):
         shown = {" ": "[space]", "\n": "[newline]", "\t": "[tab]", "\r": "[CR]"}.get(ch, ch)
@@ -158,7 +158,174 @@ complexity metrics are approximate. Uploaded files are analysed as text and neve
 """
 
 # --------------------------------- Interface ---------------------------------
-st.markdown("<style>.main .block-container{padding-top:1.5rem} div[data-testid='stMetric']{background:#f4f6fb;padding:12px;border-radius:10px}</style>", unsafe_allow_html=True)
+st.markdown("""
+<style>
+:root {
+    --ea-bg: #080d1a;
+    --ea-panel: #11182a;
+    --ea-panel-2: #161f35;
+    --ea-border: #263450;
+    --ea-text: #f4f7fb;
+    --ea-muted: #9ba8bf;
+    --ea-cyan: #38bdf8;
+    --ea-purple: #8b7cf6;
+    --ea-green: #34d399;
+}
+.stApp {
+    background:
+        radial-gradient(circle at 82% 0%, rgba(56, 189, 248, 0.07), transparent 22rem),
+        linear-gradient(135deg, #080d1a 0%, #0b1020 100%);
+    color: var(--ea-text);
+}
+.block-container {
+    max-width: 1320px;
+    padding: 1.2rem 2rem 3rem;
+}
+header[data-testid="stHeader"] {
+    background: rgba(8, 13, 26, 0.92);
+}
+[data-testid="stSidebar"] {
+    background: #0d1424;
+    border-right: 1px solid var(--ea-border);
+}
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
+    color: var(--ea-muted);
+}
+h1, h2, h3, h4, [data-testid="stHeading"] {
+    color: var(--ea-text) !important;
+}
+.stCaption, [data-testid="stCaptionContainer"] {
+    color: var(--ea-muted) !important;
+}
+div[data-testid="stMetric"] {
+    background: var(--ea-panel);
+    border: 1px solid var(--ea-border);
+    border-radius: 14px;
+    padding: 1.1rem 1.2rem;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.16);
+}
+div[data-testid="stMetricLabel"] p,
+div[data-testid="stMetricLabel"] {
+    color: var(--ea-muted) !important;
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+div[data-testid="stMetricValue"] {
+    color: var(--ea-text) !important;
+}
+.ea-card-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+    margin: 0.25rem 0 1rem;
+}
+.ea-card-grid.three {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.ea-card {
+    min-height: 112px;
+    padding: 1.1rem 1.2rem;
+    background: linear-gradient(145deg, var(--ea-panel-2), var(--ea-panel));
+    border: 1px solid var(--ea-border);
+    border-radius: 14px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+}
+.ea-card-label {
+    color: var(--ea-muted);
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.055em;
+    text-transform: uppercase;
+    margin-bottom: 0.55rem;
+}
+.ea-card-value {
+    color: var(--ea-text);
+    font-size: 1.65rem;
+    font-weight: 750;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+}
+.ea-card.accent-cyan { border-top: 3px solid var(--ea-cyan); }
+.ea-card.accent-purple { border-top: 3px solid var(--ea-purple); }
+.ea-card.accent-green { border-top: 3px solid var(--ea-green); }
+.ea-card.accent-amber { border-top: 3px solid #fbbf24; }
+.ea-summary {
+    margin: 0.35rem 0 1rem;
+    padding: 0.9rem 1rem;
+    background: rgba(17, 24, 42, 0.82);
+    border: 1px solid var(--ea-border);
+    border-left: 3px solid var(--ea-cyan);
+    border-radius: 10px;
+    color: var(--ea-text);
+}
+.ea-summary.security {
+    border-left-color: var(--ea-green);
+}
+.ea-summary strong {
+    color: var(--ea-cyan);
+}
+.ea-summary.security strong {
+    color: var(--ea-green);
+}
+.stTabs [data-baseweb="tab-list"] {
+    gap: 0.45rem;
+    background: transparent;
+}
+.stTabs [data-baseweb="tab"] {
+    height: auto;
+    padding: 0.72rem 1rem;
+    color: var(--ea-muted);
+    background: var(--ea-panel);
+    border: 1px solid var(--ea-border);
+    border-radius: 10px;
+}
+.stTabs [aria-selected="true"] {
+    color: var(--ea-text) !important;
+    background: linear-gradient(135deg, rgba(56,189,248,.18), rgba(139,124,246,.12));
+    border-color: rgba(56,189,248,.7);
+}
+.stTextArea textarea,
+.stTextInput input,
+.stSelectbox [data-baseweb="select"] > div,
+.stDataFrame {
+    background: #11182a !important;
+    color: var(--ea-text) !important;
+    border-color: var(--ea-border) !important;
+}
+.stButton > button,
+.stDownloadButton > button {
+    border-radius: 10px;
+    border: 1px solid var(--ea-border);
+    background: var(--ea-panel);
+    color: var(--ea-text);
+}
+.stButton > button[kind="primary"] {
+    border: none;
+    background: linear-gradient(135deg, #0ea5e9, #7c3aed);
+    color: white;
+    font-weight: 750;
+}
+.stAlert {
+    border-radius: 10px;
+}
+hr {
+    border-color: var(--ea-border);
+}
+@media (max-width: 900px) {
+    .ea-card-grid, .ea-card-grid.three {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+@media (max-width: 600px) {
+    .block-container { padding: 1rem; }
+    .ea-card-grid, .ea-card-grid.three {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+""", unsafe_allow_html=True)
 st.title("🔐 Text/Code Complexity & Security Vulnerability Analyzer")
 st.caption("Project 4.2 • Shannon entropy • Security indicators • Source-code complexity")
 
@@ -217,13 +384,16 @@ if bundle:
     metrics = bundle["complexity"]
     st.divider()
     st.subheader("Analysis dashboard")
-    a, b, c, d = st.columns(4)
-    a.metric("Shannon entropy", f"{r['entropy']:.3f} bits/char")
-    b.metric("Characters", f"{r['length']:,}")
-    c.metric("Unique characters", r["unique"])
-    d.metric("Heuristic risk score", f"{risk_score}/100")
-    st.markdown(f"**Entropy interpretation:** {r['label']} — {r['interpretation']}")
-    st.markdown(f"**Security triage:** {risk_label}")
+    st.markdown(f"""
+    <div class="ea-card-grid">
+      <div class="ea-card accent-cyan"><div class="ea-card-label">Shannon entropy</div><div class="ea-card-value">{r['entropy']:.3f}</div></div>
+      <div class="ea-card accent-purple"><div class="ea-card-label">Characters</div><div class="ea-card-value">{r['length']:,}</div></div>
+      <div class="ea-card accent-green"><div class="ea-card-label">Unique characters</div><div class="ea-card-value">{r['unique']:,}</div></div>
+      <div class="ea-card accent-amber"><div class="ea-card-label">Heuristic risk score</div><div class="ea-card-value">{risk_score}/100</div></div>
+    </div>
+    <div class="ea-summary"><strong>Entropy interpretation:</strong> {r['label']} — {r['interpretation']}</div>
+    <div class="ea-summary security"><strong>Security triage:</strong> {risk_label}</div>
+    """, unsafe_allow_html=True)
 
     entropy_tab, security_tab, complexity_tab, report_tab = st.tabs(["📊 Entropy analysis", "🛡️ Security analysis", "🧩 Code complexity", "📄 Audit report"])
     with entropy_tab:
@@ -231,15 +401,26 @@ if bundle:
         with left:
             st.markdown("#### Character frequency (top 20)")
             freq = r["table"].head(20)
-            fig, ax = plt.subplots(figsize=(8, 4))
-            ax.bar(freq["Character"].astype(str), freq["Frequency"])
-            ax.set_xlabel("Character"); ax.set_ylabel("Frequency"); ax.tick_params(axis="x", rotation=55)
+            fig, ax = plt.subplots(figsize=(8, 4), facecolor="#11182a")
+            ax.set_facecolor("#11182a")
+            ax.bar(freq["Character"].astype(str), freq["Frequency"], color="#38bdf8")
+            ax.set_xlabel("Character", color="#9ba8bf"); ax.set_ylabel("Frequency", color="#9ba8bf")
+            ax.tick_params(axis="x", rotation=55, colors="#9ba8bf"); ax.tick_params(axis="y", colors="#9ba8bf")
+            ax.spines["bottom"].set_color("#263450"); ax.spines["left"].set_color("#263450")
+            ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
+            ax.grid(axis="y", alpha=.12, color="#9ba8bf")
             fig.tight_layout(); st.pyplot(fig); plt.close(fig)
         with right:
             st.markdown("#### Probability vs entropy contribution")
-            fig, ax = plt.subplots(figsize=(8, 4))
-            ax.plot(r["sorted_p"], r["sorted_contrib"], marker="o")
-            ax.set_xlabel("Character probability P(x)"); ax.set_ylabel("−P(x) log₂ P(x)"); ax.grid(True, alpha=.3)
+            fig, ax = plt.subplots(figsize=(8, 4), facecolor="#11182a")
+            ax.set_facecolor("#11182a")
+            ax.plot(r["sorted_p"], r["sorted_contrib"], marker="o", color="#8b7cf6", linewidth=2)
+            ax.set_xlabel("Character probability P(x)", color="#9ba8bf")
+            ax.set_ylabel("−P(x) log₂ P(x)", color="#9ba8bf")
+            ax.tick_params(colors="#9ba8bf")
+            ax.spines["bottom"].set_color("#263450"); ax.spines["left"].set_color("#263450")
+            ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
+            ax.grid(True, alpha=.12, color="#9ba8bf")
             fig.tight_layout(); st.pyplot(fig); plt.close(fig)
         st.markdown("#### Character probability distribution")
         st.dataframe(r["table"], use_container_width=True, hide_index=True)
@@ -260,9 +441,13 @@ if bundle:
         st.caption("Secret-like values are masked in the results. Entropy and encoded-string patterns are clues only; they do not prove malicious activity or encryption.")
     with complexity_tab:
         st.subheader("Source-code complexity estimates")
-        cols = st.columns(3)
-        for i, (key, value) in enumerate(metrics.items()):
-            cols[i % 3].metric(key, value)
+        metric_items = list(metrics.items())
+        card_grid = "".join(
+            f'<div class="ea-card accent-cyan"><div class="ea-card-label">{key}</div>'
+            f'<div class="ea-card-value">{value}</div></div>'
+            for key, value in metric_items
+        )
+        st.markdown(f'<div class="ea-card-grid three">{card_grid}</div>', unsafe_allow_html=True)
         st.info("Cyclomatic complexity is estimated as decision points + 1. Python uses its AST parser; other languages use simple pattern matching. For non-code text, these counts are not meaningful.")
     with report_tab:
         report = make_report(bundle["name"], r, findings, risk_score, risk_label, metrics)
