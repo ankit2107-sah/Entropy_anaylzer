@@ -44,4 +44,5 @@ The Streamlit `app.py` remains for local use; Vercel serves the static browser d
 - Entropy is not proof of encryption, compression, or malicious content.
 - Pattern matching can produce false positives and cannot guarantee that secrets are absent.
 - Security scores and complexity metrics are educational estimates, not certified ratings. The browser version uses heuristic source scanning; Python does not receive a full AST parse in the browser.
+- For browser responsiveness, analysis is limited to 250,000 characters and uploaded files must be under 2 MB.
 - Use synthetic or public data. Do not upload real credentials, private keys, or personal identifiers to any public service.
